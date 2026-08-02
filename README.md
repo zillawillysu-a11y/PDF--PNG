@@ -26,7 +26,7 @@ python pdf2png.py
 python -m pdf_to_png --gui
 ```
 
-1. Select a PDF
+1. Drag and drop a PDF onto the window, or browse to select one
 2. Optionally change the output folder / DPI
 3. Click **Convert**
 

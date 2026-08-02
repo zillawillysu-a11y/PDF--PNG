@@ -6,10 +6,11 @@ datas = [("assets/icon.png", "assets"), ("assets/icon.ico", "assets")]
 binaries = []
 hiddenimports = []
 
-tmp_ret = collect_all("pymupdf")
-datas += tmp_ret[0]
-binaries += tmp_ret[1]
-hiddenimports += tmp_ret[2]
+for package in ("pymupdf", "tkinterdnd2"):
+    pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(package)
+    datas += pkg_datas
+    binaries += pkg_binaries
+    hiddenimports += pkg_hiddenimports
 
 a = Analysis(
     ["pdf2png.py"],

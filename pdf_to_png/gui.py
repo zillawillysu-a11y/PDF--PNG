@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -26,6 +27,8 @@ COLORS = {
     "button_hover": "#3d3d3d",
     "disabled_bg": "#1a1a1a",
     "disabled_text": "#666666",
+    "drop_bg": "#0f0f0f",
+    "drop_active": "#2a2a2a",
 }
 
 
@@ -167,6 +170,20 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
     return style
 
 
+def parse_drop_files(data: str) -> list[str]:
+    """Parse TkDnD file list data into filesystem paths."""
+    if not data:
+        return []
+
+    paths = re.findall(r"\{([^}]*)\}|(\S+)", data)
+    cleaned: list[str] = []
+    for braced, plain in paths:
+        path = braced or plain
+        if path:
+            cleaned.append(path)
+    return cleaned
+
+
 class PdfToPngApp(ttk.Frame):
     def __init__(
         self,
@@ -177,7 +194,7 @@ class PdfToPngApp(ttk.Frame):
     ) -> None:
         super().__init__(master, padding=20)
         self.master.title("PDF to PNG")
-        self.master.minsize(560, 420)
+        self.master.minsize(560, 480)
         self.master.configure(bg=COLORS["bg"])
         self.pack(fill="both", expand=True)
 
@@ -185,12 +202,14 @@ class PdfToPngApp(ttk.Frame):
         self.output_var = tk.StringVar(value=initial_output or "")
         self.dpi_var = tk.StringVar(value=str(initial_dpi))
         self.password_var = tk.StringVar()
-        self.status_var = tk.StringVar(value="Select a PDF file to begin.")
+        self.status_var = tk.StringVar(value="Drop a PDF here, or browse to select one.")
         self.busy = False
+        self._dnd_enabled = False
 
         self._build_ui()
+        self._enable_drag_and_drop()
         if initial_pdf and not initial_output:
-            self.output_var.set(str(default_output_dir(Path(initial_pdf))))
+            self.set_pdf(initial_pdf)
 
     def _build_ui(self) -> None:
         ttk.Label(self, text="PDF to PNG", style="Title.TLabel").grid(
@@ -198,12 +217,37 @@ class PdfToPngApp(ttk.Frame):
         )
         ttk.Label(
             self,
-            text="Convert each page of a PDF into PNG images.",
+            text="Drag and drop a PDF, or browse to convert each page into PNG images.",
             style="Subtitle.TLabel",
-        ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 18))
+        ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 14))
+
+        self.drop_frame = tk.Frame(
+            self,
+            bg=COLORS["drop_bg"],
+            highlightbackground=COLORS["border"],
+            highlightcolor=COLORS["accent"],
+            highlightthickness=1,
+            bd=0,
+        )
+        self.drop_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=(0, 14))
+        self.drop_frame.grid_propagate(False)
+        self.drop_frame.configure(height=120)
+
+        self.drop_label = tk.Label(
+            self.drop_frame,
+            text="Drop PDF here\n— or click to browse —",
+            bg=COLORS["drop_bg"],
+            fg=COLORS["muted"],
+            font=("Segoe UI", 12),
+            justify="center",
+            cursor="hand2",
+        )
+        self.drop_label.pack(expand=True, fill="both", padx=12, pady=12)
+        self.drop_frame.bind("<Button-1>", lambda _e: self.choose_pdf())
+        self.drop_label.bind("<Button-1>", lambda _e: self.choose_pdf())
 
         card = ttk.Frame(self, style="Card.TFrame", padding=16)
-        card.grid(row=2, column=0, columnspan=3, sticky="nsew")
+        card.grid(row=3, column=0, columnspan=3, sticky="nsew")
         card.columnconfigure(0, weight=1)
         card.columnconfigure(1, weight=1)
 
@@ -245,7 +289,7 @@ class PdfToPngApp(ttk.Frame):
         )
 
         self.progress = ttk.Progressbar(self, mode="determinate")
-        self.progress.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(18, 10))
+        self.progress.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(18, 10))
 
         self.convert_btn = ttk.Button(
             self,
@@ -253,7 +297,7 @@ class PdfToPngApp(ttk.Frame):
             style="Accent.TButton",
             command=self.start_convert,
         )
-        self.convert_btn.grid(row=4, column=0, columnspan=3, sticky="ew")
+        self.convert_btn.grid(row=5, column=0, columnspan=3, sticky="ew")
 
         self.status_label = ttk.Label(
             self,
@@ -261,11 +305,66 @@ class PdfToPngApp(ttk.Frame):
             style="Status.TLabel",
             wraplength=500,
         )
-        self.status_label.grid(row=5, column=0, columnspan=3, sticky="w", pady=(14, 0))
+        self.status_label.grid(row=6, column=0, columnspan=3, sticky="w", pady=(14, 0))
 
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.rowconfigure(2, weight=1)
+        self.rowconfigure(3, weight=1)
+
+    def _set_drop_active(self, active: bool) -> None:
+        bg = COLORS["drop_active"] if active else COLORS["drop_bg"]
+        border = COLORS["accent"] if active else COLORS["border"]
+        self.drop_frame.configure(bg=bg, highlightbackground=border, highlightcolor=border)
+        self.drop_label.configure(bg=bg, fg=COLORS["text"] if active else COLORS["muted"])
+
+    def _enable_drag_and_drop(self) -> None:
+        try:
+            from tkinterdnd2 import DND_FILES
+        except Exception:
+            self.status_var.set("Browse to select a PDF file.")
+            return
+
+        targets = [self.master, self, self.drop_frame, self.drop_label]
+        for widget in targets:
+            try:
+                widget.drop_target_register(DND_FILES)
+                widget.dnd_bind("<<Drop>>", self._on_drop)
+                widget.dnd_bind("<<DragEnter>>", self._on_drag_enter)
+                widget.dnd_bind("<<DragLeave>>", self._on_drag_leave)
+            except Exception:
+                continue
+
+        self._dnd_enabled = True
+
+    def _on_drag_enter(self, _event: tk.Event) -> str | None:
+        self._set_drop_active(True)
+        return None
+
+    def _on_drag_leave(self, _event: tk.Event) -> str | None:
+        self._set_drop_active(False)
+        return None
+
+    def _on_drop(self, event: tk.Event) -> str | None:
+        self._set_drop_active(False)
+        paths = parse_drop_files(getattr(event, "data", "") or "")
+        pdfs = [p for p in paths if p.lower().endswith(".pdf")]
+        if not pdfs:
+            messagebox.showwarning("Notice", "Please drop a PDF file.")
+            return None
+        self.set_pdf(pdfs[0])
+        if len(pdfs) > 1:
+            self.status_var.set(
+                f"Selected: {Path(pdfs[0]).name} (using the first of {len(pdfs)} PDFs)"
+            )
+        return None
+
+    def set_pdf(self, path: str | Path) -> None:
+        pdf_path = Path(path).expanduser()
+        self.pdf_var.set(str(pdf_path))
+        self.output_var.set(str(default_output_dir(pdf_path)))
+        self.drop_label.configure(text=f"Selected\n{pdf_path.name}")
+        self.status_var.set(f"Selected: {pdf_path.name}")
 
     def choose_pdf(self) -> None:
         path = filedialog.askopenfilename(
@@ -274,10 +373,7 @@ class PdfToPngApp(ttk.Frame):
         )
         if not path:
             return
-        self.pdf_var.set(path)
-        if not self.output_var.get().strip():
-            self.output_var.set(str(default_output_dir(Path(path))))
-        self.status_var.set(f"Selected: {Path(path).name}")
+        self.set_pdf(path)
 
     def choose_output(self) -> None:
         path = filedialog.askdirectory(title="Select output folder")
@@ -386,12 +482,21 @@ def _set_window_icon(root: tk.Tk) -> None:
             pass
 
 
+def _create_root() -> tk.Tk:
+    try:
+        from tkinterdnd2 import TkinterDnD
+
+        return TkinterDnD.Tk()
+    except Exception:
+        return tk.Tk()
+
+
 def launch_gui(
     initial_pdf: str | None = None,
     initial_output: str | None = None,
     initial_dpi: int = 200,
 ) -> None:
-    root = tk.Tk()
+    root = _create_root()
     try:
         root.call("tk", "scaling", 1.2)
     except tk.TclError:
