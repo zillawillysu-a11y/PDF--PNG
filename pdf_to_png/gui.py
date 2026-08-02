@@ -7,6 +7,163 @@ from tkinter import filedialog, messagebox, ttk
 
 from .convert import convert_pdf_to_png, default_output_dir
 
+# CuePlayer 風格：全黑背景、低干擾深色介面
+COLORS = {
+    "bg": "#000000",
+    "panel": "#111111",
+    "panel_alt": "#1a1a1a",
+    "border": "#333333",
+    "text": "#e8e8e8",
+    "muted": "#9a9a9a",
+    "accent": "#ffb000",
+    "accent_hover": "#ffc933",
+    "accent_text": "#111111",
+    "entry_bg": "#0d0d0d",
+    "progress_bg": "#222222",
+    "progress_fill": "#ffb000",
+    "button_bg": "#222222",
+    "button_hover": "#333333",
+    "danger": "#ff5c5c",
+    "ok": "#6dffb0",
+}
+
+
+def apply_black_theme(root: tk.Tk) -> ttk.Style:
+    root.configure(bg=COLORS["bg"])
+    style = ttk.Style(root)
+    if "clam" in style.theme_names():
+        style.theme_use("clam")
+
+    style.configure(
+        ".",
+        background=COLORS["bg"],
+        foreground=COLORS["text"],
+        fieldbackground=COLORS["entry_bg"],
+        bordercolor=COLORS["border"],
+        darkcolor=COLORS["bg"],
+        lightcolor=COLORS["border"],
+        troughcolor=COLORS["progress_bg"],
+        focuscolor=COLORS["accent"],
+        font=("Segoe UI", 10),
+    )
+    style.configure("TFrame", background=COLORS["bg"])
+    style.configure("Card.TFrame", background=COLORS["panel"], relief="flat")
+    style.configure(
+        "Title.TLabel",
+        background=COLORS["bg"],
+        foreground=COLORS["accent"],
+        font=("Segoe UI", 22, "bold"),
+    )
+    style.configure(
+        "Subtitle.TLabel",
+        background=COLORS["bg"],
+        foreground=COLORS["muted"],
+        font=("Segoe UI", 10),
+    )
+    style.configure(
+        "TLabel",
+        background=COLORS["bg"],
+        foreground=COLORS["text"],
+        font=("Segoe UI", 10),
+    )
+    style.configure(
+        "Muted.TLabel",
+        background=COLORS["bg"],
+        foreground=COLORS["muted"],
+        font=("Segoe UI", 10),
+    )
+    style.configure(
+        "Status.TLabel",
+        background=COLORS["bg"],
+        foreground=COLORS["muted"],
+        font=("Segoe UI", 10),
+    )
+    style.configure(
+        "TEntry",
+        fieldbackground=COLORS["entry_bg"],
+        foreground=COLORS["text"],
+        insertcolor=COLORS["text"],
+        bordercolor=COLORS["border"],
+        lightcolor=COLORS["border"],
+        darkcolor=COLORS["border"],
+        padding=8,
+    )
+    style.map(
+        "TEntry",
+        fieldbackground=[("focus", COLORS["panel_alt"])],
+        bordercolor=[("focus", COLORS["accent"])],
+    )
+    style.configure(
+        "TCombobox",
+        fieldbackground=COLORS["entry_bg"],
+        background=COLORS["button_bg"],
+        foreground=COLORS["text"],
+        arrowcolor=COLORS["accent"],
+        bordercolor=COLORS["border"],
+        lightcolor=COLORS["border"],
+        darkcolor=COLORS["border"],
+        padding=6,
+    )
+    style.map(
+        "TCombobox",
+        fieldbackground=[("readonly", COLORS["entry_bg"]), ("focus", COLORS["panel_alt"])],
+        foreground=[("readonly", COLORS["text"])],
+        bordercolor=[("focus", COLORS["accent"])],
+    )
+    root.option_add("*TCombobox*Listbox.background", COLORS["panel"])
+    root.option_add("*TCombobox*Listbox.foreground", COLORS["text"])
+    root.option_add("*TCombobox*Listbox.selectBackground", COLORS["accent"])
+    root.option_add("*TCombobox*Listbox.selectForeground", COLORS["accent_text"])
+
+    style.configure(
+        "TButton",
+        background=COLORS["button_bg"],
+        foreground=COLORS["text"],
+        bordercolor=COLORS["border"],
+        lightcolor=COLORS["button_bg"],
+        darkcolor=COLORS["button_bg"],
+        focuscolor=COLORS["border"],
+        padding=(14, 8),
+        font=("Segoe UI", 10, "bold"),
+    )
+    style.map(
+        "TButton",
+        background=[
+            ("active", COLORS["button_hover"]),
+            ("disabled", COLORS["panel"]),
+        ],
+        foreground=[("disabled", "#666666")],
+    )
+    style.configure(
+        "Accent.TButton",
+        background=COLORS["accent"],
+        foreground=COLORS["accent_text"],
+        bordercolor=COLORS["accent"],
+        lightcolor=COLORS["accent"],
+        darkcolor=COLORS["accent"],
+        focuscolor=COLORS["accent"],
+        padding=(14, 10),
+        font=("Segoe UI", 11, "bold"),
+    )
+    style.map(
+        "Accent.TButton",
+        background=[
+            ("active", COLORS["accent_hover"]),
+            ("disabled", "#5a4500"),
+        ],
+        foreground=[("disabled", "#222222")],
+    )
+    style.configure(
+        "Horizontal.TProgressbar",
+        troughcolor=COLORS["progress_bg"],
+        background=COLORS["progress_fill"],
+        bordercolor=COLORS["border"],
+        lightcolor=COLORS["progress_fill"],
+        darkcolor=COLORS["progress_fill"],
+        thickness=14,
+    )
+    return style
+
 
 class PdfToPngApp(ttk.Frame):
     def __init__(
@@ -16,9 +173,10 @@ class PdfToPngApp(ttk.Frame):
         initial_output: str | None = None,
         initial_dpi: int = 200,
     ) -> None:
-        super().__init__(master, padding=16)
-        self.master.title("PDF → PNG 轉換工具")
-        self.master.minsize(520, 360)
+        super().__init__(master, padding=20)
+        self.master.title("PDF → PNG")
+        self.master.minsize(560, 420)
+        self.master.configure(bg=COLORS["bg"])
         self.pack(fill="both", expand=True)
 
         self.pdf_var = tk.StringVar(value=initial_pdf or "")
@@ -33,35 +191,45 @@ class PdfToPngApp(ttk.Frame):
             self.output_var.set(str(default_output_dir(Path(initial_pdf))))
 
     def _build_ui(self) -> None:
-        title = ttk.Label(self, text="PDF → PNG", font=("Segoe UI", 18, "bold"))
-        title.grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 4))
-
-        subtitle = ttk.Label(
+        ttk.Label(self, text="PDF → PNG", style="Title.TLabel").grid(
+            row=0, column=0, columnspan=3, sticky="w", pady=(0, 4)
+        )
+        ttk.Label(
             self,
-            text="選擇 PDF，把每一頁轉成 PNG 圖片。",
-            foreground="#555555",
-        )
-        subtitle.grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 16))
+            text="黑色介面 · 選擇 PDF，把每一頁轉成 PNG",
+            style="Subtitle.TLabel",
+        ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 18))
 
-        ttk.Label(self, text="PDF 檔案").grid(row=2, column=0, sticky="w")
-        ttk.Entry(self, textvariable=self.pdf_var).grid(
-            row=3, column=0, columnspan=2, sticky="ew", padx=(0, 8)
+        card = ttk.Frame(self, style="Card.TFrame", padding=16)
+        card.grid(row=2, column=0, columnspan=3, sticky="nsew")
+        card.columnconfigure(0, weight=1)
+        card.columnconfigure(1, weight=1)
+
+        # 讓 Card 看起來更像面板：外層用 tk.Frame 畫邊線
+        # ttk 難以畫邊框，改用外層容器
+        ttk.Label(card, text="PDF 檔案", style="Muted.TLabel").grid(
+            row=0, column=0, sticky="w"
         )
-        ttk.Button(self, text="瀏覽…", command=self.choose_pdf).grid(
-            row=3, column=2, sticky="ew"
+        ttk.Entry(card, textvariable=self.pdf_var).grid(
+            row=1, column=0, columnspan=2, sticky="ew", padx=(0, 8), pady=(4, 0)
+        )
+        ttk.Button(card, text="瀏覽…", command=self.choose_pdf).grid(
+            row=1, column=2, sticky="ew", pady=(4, 0)
         )
 
-        ttk.Label(self, text="輸出資料夾").grid(row=4, column=0, sticky="w", pady=(12, 0))
-        ttk.Entry(self, textvariable=self.output_var).grid(
-            row=5, column=0, columnspan=2, sticky="ew", padx=(0, 8)
+        ttk.Label(card, text="輸出資料夾", style="Muted.TLabel").grid(
+            row=2, column=0, sticky="w", pady=(14, 0)
         )
-        ttk.Button(self, text="瀏覽…", command=self.choose_output).grid(
-            row=5, column=2, sticky="ew"
+        ttk.Entry(card, textvariable=self.output_var).grid(
+            row=3, column=0, columnspan=2, sticky="ew", padx=(0, 8), pady=(4, 0)
+        )
+        ttk.Button(card, text="瀏覽…", command=self.choose_output).grid(
+            row=3, column=2, sticky="ew", pady=(4, 0)
         )
 
-        options = ttk.Frame(self)
-        options.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(12, 0))
-        ttk.Label(options, text="DPI").pack(side="left")
+        options = ttk.Frame(card, style="Card.TFrame")
+        options.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(16, 0))
+        ttk.Label(options, text="DPI", style="Muted.TLabel").pack(side="left")
         ttk.Combobox(
             options,
             textvariable=self.dpi_var,
@@ -69,23 +237,33 @@ class PdfToPngApp(ttk.Frame):
             width=8,
             state="readonly",
         ).pack(side="left", padx=(8, 20))
-        ttk.Label(options, text="密碼（可選）").pack(side="left")
+        ttk.Label(options, text="密碼（可選）", style="Muted.TLabel").pack(side="left")
         ttk.Entry(options, textvariable=self.password_var, show="*", width=18).pack(
             side="left", padx=(8, 0)
         )
 
         self.progress = ttk.Progressbar(self, mode="determinate")
-        self.progress.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(18, 8))
+        self.progress.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(18, 10))
 
-        self.convert_btn = ttk.Button(self, text="開始轉換", command=self.start_convert)
-        self.convert_btn.grid(row=8, column=0, columnspan=3, sticky="ew")
-
-        ttk.Label(self, textvariable=self.status_var, wraplength=480).grid(
-            row=9, column=0, columnspan=3, sticky="w", pady=(12, 0)
+        self.convert_btn = ttk.Button(
+            self,
+            text="開始轉換",
+            style="Accent.TButton",
+            command=self.start_convert,
         )
+        self.convert_btn.grid(row=4, column=0, columnspan=3, sticky="ew")
+
+        self.status_label = ttk.Label(
+            self,
+            textvariable=self.status_var,
+            style="Status.TLabel",
+            wraplength=500,
+        )
+        self.status_label.grid(row=5, column=0, columnspan=3, sticky="w", pady=(14, 0))
 
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
 
     def choose_pdf(self) -> None:
         path = filedialog.askopenfilename(
@@ -197,10 +375,7 @@ def launch_gui(
     except tk.TclError:
         pass
 
-    style = ttk.Style(root)
-    if "clam" in style.theme_names():
-        style.theme_use("clam")
-
+    apply_black_theme(root)
     PdfToPngApp(
         root,
         initial_pdf=initial_pdf,
