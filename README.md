@@ -6,8 +6,9 @@ Supports:
 
 - **CLI** for batch conversion
 - **GUI** with a black-and-white interface
+- **Packaged app** (`PDF2PNG.exe` on Windows)
 
-## Install
+## Install (run from source)
 
 Requires Python 3.10+.
 
@@ -56,6 +57,36 @@ report_png/
   report-03.png
 ```
 
+## Package as a standalone app
+
+### Windows (recommended)
+
+1. Install [Python](https://www.python.org/downloads/) and check **Add python.exe to PATH**
+2. Open the project folder
+3. Double-click `build.bat`
+
+When it finishes, you will get:
+
+```text
+dist\PDF2PNG.exe
+```
+
+You can copy `PDF2PNG.exe` anywhere and double-click to open the GUI.  
+No Python install is needed on other PCs to run the `.exe`.
+
+### macOS / Linux
+
+```bash
+chmod +x build.sh
+./build.sh
+```
+
+Output:
+
+```text
+dist/PDF2PNG
+```
+
 ## DPI guide
 
 | DPI | Use case |
@@ -68,12 +99,16 @@ report_png/
 ## Project layout
 
 ```text
-pdf2png.py          # Entry point
+pdf2png.py              # Entry point
 pdf_to_png/
-  convert.py        # Conversion logic
-  cli.py            # Command-line interface
-  gui.py            # Desktop UI (black / gray / white only)
+  convert.py            # Conversion logic
+  cli.py                # Command-line interface
+  gui.py                # Desktop UI (black / gray / white only)
+pdf2png.spec            # PyInstaller config
+build.bat               # Windows one-click build
+build.sh                # macOS / Linux build
 requirements.txt
+requirements-build.txt
 ```
 
 ## Notes
