@@ -7,24 +7,24 @@ from tkinter import filedialog, messagebox, ttk
 
 from .convert import convert_pdf_to_png, default_output_dir
 
-# CuePlayer 風格：全黑背景、低干擾深色介面
+# Black-to-white only. No chromatic colors.
 COLORS = {
     "bg": "#000000",
-    "panel": "#111111",
-    "panel_alt": "#1a1a1a",
-    "border": "#333333",
-    "text": "#e8e8e8",
-    "muted": "#9a9a9a",
-    "accent": "#ffb000",
-    "accent_hover": "#ffc933",
-    "accent_text": "#111111",
-    "entry_bg": "#0d0d0d",
+    "panel": "#141414",
+    "panel_alt": "#1e1e1e",
+    "border": "#3a3a3a",
+    "text": "#f0f0f0",
+    "muted": "#a0a0a0",
+    "accent": "#ffffff",
+    "accent_hover": "#d8d8d8",
+    "accent_text": "#000000",
+    "entry_bg": "#0a0a0a",
     "progress_bg": "#222222",
-    "progress_fill": "#ffb000",
-    "button_bg": "#222222",
-    "button_hover": "#333333",
-    "danger": "#ff5c5c",
-    "ok": "#6dffb0",
+    "progress_fill": "#ffffff",
+    "button_bg": "#2a2a2a",
+    "button_hover": "#3d3d3d",
+    "disabled_bg": "#1a1a1a",
+    "disabled_text": "#666666",
 }
 
 
@@ -51,7 +51,7 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
     style.configure(
         "Title.TLabel",
         background=COLORS["bg"],
-        foreground=COLORS["accent"],
+        foreground=COLORS["text"],
         font=("Segoe UI", 22, "bold"),
     )
     style.configure(
@@ -68,7 +68,7 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
     )
     style.configure(
         "Muted.TLabel",
-        background=COLORS["bg"],
+        background=COLORS["panel"],
         foreground=COLORS["muted"],
         font=("Segoe UI", 10),
     )
@@ -98,7 +98,7 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
         fieldbackground=COLORS["entry_bg"],
         background=COLORS["button_bg"],
         foreground=COLORS["text"],
-        arrowcolor=COLORS["accent"],
+        arrowcolor=COLORS["text"],
         bordercolor=COLORS["border"],
         lightcolor=COLORS["border"],
         darkcolor=COLORS["border"],
@@ -109,6 +109,7 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
         fieldbackground=[("readonly", COLORS["entry_bg"]), ("focus", COLORS["panel_alt"])],
         foreground=[("readonly", COLORS["text"])],
         bordercolor=[("focus", COLORS["accent"])],
+        arrowcolor=[("disabled", COLORS["disabled_text"])],
     )
     root.option_add("*TCombobox*Listbox.background", COLORS["panel"])
     root.option_add("*TCombobox*Listbox.foreground", COLORS["text"])
@@ -130,9 +131,9 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
         "TButton",
         background=[
             ("active", COLORS["button_hover"]),
-            ("disabled", COLORS["panel"]),
+            ("disabled", COLORS["disabled_bg"]),
         ],
-        foreground=[("disabled", "#666666")],
+        foreground=[("disabled", COLORS["disabled_text"])],
     )
     style.configure(
         "Accent.TButton",
@@ -149,9 +150,9 @@ def apply_black_theme(root: tk.Tk) -> ttk.Style:
         "Accent.TButton",
         background=[
             ("active", COLORS["accent_hover"]),
-            ("disabled", "#5a4500"),
+            ("disabled", "#555555"),
         ],
-        foreground=[("disabled", "#222222")],
+        foreground=[("disabled", "#111111")],
     )
     style.configure(
         "Horizontal.TProgressbar",
@@ -174,7 +175,7 @@ class PdfToPngApp(ttk.Frame):
         initial_dpi: int = 200,
     ) -> None:
         super().__init__(master, padding=20)
-        self.master.title("PDF → PNG")
+        self.master.title("PDF to PNG")
         self.master.minsize(560, 420)
         self.master.configure(bg=COLORS["bg"])
         self.pack(fill="both", expand=True)
@@ -183,7 +184,7 @@ class PdfToPngApp(ttk.Frame):
         self.output_var = tk.StringVar(value=initial_output or "")
         self.dpi_var = tk.StringVar(value=str(initial_dpi))
         self.password_var = tk.StringVar()
-        self.status_var = tk.StringVar(value="請選擇一個 PDF 檔案。")
+        self.status_var = tk.StringVar(value="Select a PDF file to begin.")
         self.busy = False
 
         self._build_ui()
@@ -191,12 +192,12 @@ class PdfToPngApp(ttk.Frame):
             self.output_var.set(str(default_output_dir(Path(initial_pdf))))
 
     def _build_ui(self) -> None:
-        ttk.Label(self, text="PDF → PNG", style="Title.TLabel").grid(
+        ttk.Label(self, text="PDF to PNG", style="Title.TLabel").grid(
             row=0, column=0, columnspan=3, sticky="w", pady=(0, 4)
         )
         ttk.Label(
             self,
-            text="黑色介面 · 選擇 PDF，把每一頁轉成 PNG",
+            text="Convert each page of a PDF into PNG images.",
             style="Subtitle.TLabel",
         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 18))
 
@@ -205,25 +206,23 @@ class PdfToPngApp(ttk.Frame):
         card.columnconfigure(0, weight=1)
         card.columnconfigure(1, weight=1)
 
-        # 讓 Card 看起來更像面板：外層用 tk.Frame 畫邊線
-        # ttk 難以畫邊框，改用外層容器
-        ttk.Label(card, text="PDF 檔案", style="Muted.TLabel").grid(
+        ttk.Label(card, text="PDF file", style="Muted.TLabel").grid(
             row=0, column=0, sticky="w"
         )
         ttk.Entry(card, textvariable=self.pdf_var).grid(
             row=1, column=0, columnspan=2, sticky="ew", padx=(0, 8), pady=(4, 0)
         )
-        ttk.Button(card, text="瀏覽…", command=self.choose_pdf).grid(
+        ttk.Button(card, text="Browse…", command=self.choose_pdf).grid(
             row=1, column=2, sticky="ew", pady=(4, 0)
         )
 
-        ttk.Label(card, text="輸出資料夾", style="Muted.TLabel").grid(
+        ttk.Label(card, text="Output folder", style="Muted.TLabel").grid(
             row=2, column=0, sticky="w", pady=(14, 0)
         )
         ttk.Entry(card, textvariable=self.output_var).grid(
             row=3, column=0, columnspan=2, sticky="ew", padx=(0, 8), pady=(4, 0)
         )
-        ttk.Button(card, text="瀏覽…", command=self.choose_output).grid(
+        ttk.Button(card, text="Browse…", command=self.choose_output).grid(
             row=3, column=2, sticky="ew", pady=(4, 0)
         )
 
@@ -237,7 +236,9 @@ class PdfToPngApp(ttk.Frame):
             width=8,
             state="readonly",
         ).pack(side="left", padx=(8, 20))
-        ttk.Label(options, text="密碼（可選）", style="Muted.TLabel").pack(side="left")
+        ttk.Label(options, text="Password (optional)", style="Muted.TLabel").pack(
+            side="left"
+        )
         ttk.Entry(options, textvariable=self.password_var, show="*", width=18).pack(
             side="left", padx=(8, 0)
         )
@@ -247,7 +248,7 @@ class PdfToPngApp(ttk.Frame):
 
         self.convert_btn = ttk.Button(
             self,
-            text="開始轉換",
+            text="Convert",
             style="Accent.TButton",
             command=self.start_convert,
         )
@@ -267,18 +268,18 @@ class PdfToPngApp(ttk.Frame):
 
     def choose_pdf(self) -> None:
         path = filedialog.askopenfilename(
-            title="選擇 PDF",
-            filetypes=[("PDF 檔案", "*.pdf"), ("所有檔案", "*.*")],
+            title="Select PDF",
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
         )
         if not path:
             return
         self.pdf_var.set(path)
         if not self.output_var.get().strip():
             self.output_var.set(str(default_output_dir(Path(path))))
-        self.status_var.set(f"已選擇：{Path(path).name}")
+        self.status_var.set(f"Selected: {Path(path).name}")
 
     def choose_output(self) -> None:
-        path = filedialog.askdirectory(title="選擇輸出資料夾")
+        path = filedialog.askdirectory(title="Select output folder")
         if path:
             self.output_var.set(path)
 
@@ -288,13 +289,13 @@ class PdfToPngApp(ttk.Frame):
 
         pdf = self.pdf_var.get().strip()
         if not pdf:
-            messagebox.showwarning("提醒", "請先選擇 PDF 檔案。")
+            messagebox.showwarning("Notice", "Please select a PDF file first.")
             return
 
         try:
             dpi = int(self.dpi_var.get())
         except ValueError:
-            messagebox.showerror("錯誤", "DPI 必須是數字。")
+            messagebox.showerror("Error", "DPI must be a number.")
             return
 
         output = self.output_var.get().strip() or None
@@ -303,7 +304,7 @@ class PdfToPngApp(ttk.Frame):
         self.busy = True
         self.convert_btn.configure(state="disabled")
         self.progress.configure(value=0, maximum=100)
-        self.status_var.set("轉換中…")
+        self.status_var.set("Converting…")
 
         thread = threading.Thread(
             target=self._convert_worker,
@@ -354,14 +355,14 @@ class PdfToPngApp(ttk.Frame):
         self.busy = False
         self.convert_btn.configure(state="normal")
         self.progress.configure(value=100)
-        self.status_var.set(f"完成！共 {page_count} 張 PNG\n輸出：{output_dir}")
-        messagebox.showinfo("完成", f"已輸出 {page_count} 張 PNG\n\n{output_dir}")
+        self.status_var.set(f"Done. Exported {page_count} PNG file(s).\nOutput: {output_dir}")
+        messagebox.showinfo("Done", f"Exported {page_count} PNG file(s).\n\n{output_dir}")
 
     def _on_error(self, message: str) -> None:
         self.busy = False
         self.convert_btn.configure(state="normal")
-        self.status_var.set(f"失敗：{message}")
-        messagebox.showerror("轉換失敗", message)
+        self.status_var.set(f"Failed: {message}")
+        messagebox.showerror("Conversion failed", message)
 
 
 def launch_gui(

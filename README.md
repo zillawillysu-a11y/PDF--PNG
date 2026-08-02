@@ -1,53 +1,53 @@
-# PDF → PNG
+# PDF to PNG
 
-把 PDF 每一頁轉成 PNG 的 Python 程式。
+A Python program that converts each page of a PDF into PNG images.
 
-支援：
+Supports:
 
-- **指令列（CLI）**：適合批次處理
-- **圖形介面（GUI）**：點選檔案即可轉換
+- **CLI** for batch conversion
+- **GUI** with a black-and-white interface
 
-## 安裝
+## Install
 
-需要 Python 3.10+。
+Requires Python 3.10+.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 使用方式
+## Usage
 
-### 圖形介面
+### GUI
 
 ```bash
 python pdf2png.py
-# 或
+# or
 python -m pdf_to_png --gui
 ```
 
-1. 選擇 PDF
-2. （可選）改輸出資料夾 / DPI
-3. 按「開始轉換」
+1. Select a PDF
+2. Optionally change the output folder / DPI
+3. Click **Convert**
 
-### 指令列
+### CLI
 
 ```bash
-# 基本用法：輸出到「原檔名_png」資料夾
-python pdf2png.py 你的檔案.pdf
+# Basic usage: writes to "<filename>_png"
+python pdf2png.py your-file.pdf
 
-# 指定輸出資料夾
-python pdf2png.py 你的檔案.pdf -o ./輸出資料夾
+# Custom output folder
+python pdf2png.py your-file.pdf -o ./output
 
-# 指定清晰度（DPI）
-python pdf2png.py 你的檔案.pdf --dpi 300
+# Custom DPI
+python pdf2png.py your-file.pdf --dpi 300
 
-# 有密碼的 PDF
-python pdf2png.py 你的檔案.pdf --password 你的密碼
+# Password-protected PDF
+python pdf2png.py your-file.pdf --password your-password
 ```
 
-### 輸出檔名
+### Output names
 
-例如 `report.pdf` 有 3 頁，會得到：
+For a 3-page `report.pdf`:
 
 ```text
 report_png/
@@ -56,26 +56,28 @@ report_png/
   report-03.png
 ```
 
-## DPI 建議
+## DPI guide
 
-| DPI | 用途 |
+| DPI | Use case |
 | --- | --- |
-| 150 | 檔案較小、預覽用 |
-| 200 | 預設，一般使用 |
-| 300 | 列印 / 較高清晰度 |
-| 400 | 超高清，檔案會較大 |
+| 150 | Smaller files / previews |
+| 200 | Default / general use |
+| 300 | Print / higher detail |
+| 400 | Very high detail / larger files |
 
-## 專案結構
+## Project layout
 
 ```text
-pdf2png.py          # 啟動入口
+pdf2png.py          # Entry point
 pdf_to_png/
-  convert.py        # 核心轉換邏輯
-  cli.py            # 指令列
-  gui.py            # 圖形介面
+  convert.py        # Conversion logic
+  cli.py            # Command-line interface
+  gui.py            # Desktop UI (black / gray / white only)
 requirements.txt
 ```
 
-## 技術
+## Notes
 
-使用 [PyMuPDF](https://pymupdf.readthedocs.io/) 渲染 PDF 頁面並輸出 PNG。
+- The GUI uses only black-to-white colors (no accent colors).
+- All user-facing text is in English.
+- Powered by [PyMuPDF](https://pymupdf.readthedocs.io/).

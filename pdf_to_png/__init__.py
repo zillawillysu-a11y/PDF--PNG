@@ -1,3 +1,3 @@
-"""PDF 每一頁轉成 PNG 的工具。"""
+"""Convert each PDF page into PNG images."""
 
 __version__ = "1.0.0"

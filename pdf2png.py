@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""方便直接執行：python pdf2png.py 檔案.pdf"""
+"""Convenience entry point: python pdf2png.py file.pdf"""
 
 from pdf_to_png.cli import main
 

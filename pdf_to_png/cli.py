@@ -11,32 +11,32 @@ from .convert import convert_pdf_to_png, default_output_dir
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pdf-to-png",
-        description="把 PDF 每一頁轉成 PNG 圖片。",
+        description="Convert each page of a PDF into PNG images.",
     )
     parser.add_argument(
         "pdf",
         nargs="?",
-        help="要轉換的 PDF 檔案路徑",
+        help="Path to the PDF file",
     )
     parser.add_argument(
         "-o",
         "--output",
-        help="輸出資料夾（預設：原檔名_png）",
+        help="Output folder (default: <filename>_png)",
     )
     parser.add_argument(
         "--dpi",
         type=int,
         default=200,
-        help="輸出清晰度，預設 200（常用 150/200/300）",
+        help="Output resolution in DPI (default: 200)",
     )
     parser.add_argument(
         "--password",
-        help="PDF 密碼（若有加密）",
+        help="PDF password if the file is encrypted",
     )
     parser.add_argument(
         "--gui",
         action="store_true",
-        help="開啟圖形介面",
+        help="Open the graphical interface",
     )
     parser.add_argument(
         "-v",
@@ -51,7 +51,7 @@ def run_cli(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    # 沒參數，或明確指定 --gui：開啟圖形介面
+    # No PDF path, or --gui explicitly requested: open the GUI.
     if args.gui or not args.pdf:
         from .gui import launch_gui
 
@@ -77,11 +77,11 @@ def run_cli(argv: list[str] | None = None) -> int:
             on_progress=on_progress,
         )
     except Exception as exc:  # noqa: BLE001
-        print(f"錯誤：{exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    print(f"\n完成！共輸出 {result.page_count} 張 PNG")
-    print(f"輸出資料夾：{result.output_dir}")
+    print(f"\nDone. Exported {result.page_count} PNG file(s).")
+    print(f"Output folder: {result.output_dir}")
     return 0
 
 

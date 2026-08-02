@@ -43,24 +43,24 @@ def convert_pdf_to_png(
     password: str | None = None,
     on_progress: ProgressCallback | None = None,
 ) -> ConvertResult:
-    """把 PDF 的每一頁轉成 PNG。
+    """Convert each page of a PDF into PNG images.
 
     Args:
-        pdf_path: 輸入 PDF 路徑。
-        output_dir: 輸出資料夾；預設為「原檔名_png」。
-        dpi: 輸出清晰度，常用 150 / 200 / 300。
-        password: PDF 密碼（若有加密）。
-        on_progress: 進度回呼 ``(current, total, saved_path)``。
+        pdf_path: Input PDF path.
+        output_dir: Output folder. Defaults to ``<filename>_png``.
+        dpi: Output resolution. Common values: 150 / 200 / 300.
+        password: PDF password if encrypted.
+        on_progress: Progress callback ``(current, total, saved_path)``.
     """
     source = Path(pdf_path).expanduser().resolve()
     if not source.exists():
-        raise FileNotFoundError(f"找不到檔案：{source}")
+        raise FileNotFoundError(f"File not found: {source}")
     if not source.is_file():
-        raise ValueError(f"不是檔案：{source}")
+        raise ValueError(f"Not a file: {source}")
     if source.suffix.lower() != ".pdf":
-        raise ValueError(f"請提供 PDF 檔案：{source}")
+        raise ValueError(f"Please provide a PDF file: {source}")
     if dpi <= 0:
-        raise ValueError("dpi 必須大於 0")
+        raise ValueError("dpi must be greater than 0")
 
     out_dir = (
         Path(output_dir).expanduser().resolve()
@@ -75,17 +75,19 @@ def convert_pdf_to_png(
 
     try:
         doc = fitz.open(source, **open_args)
-    except Exception as exc:  # noqa: BLE001 - 轉成較清楚錯誤
-        raise RuntimeError(f"無法開啟 PDF：{exc}") from exc
+    except Exception as exc:  # noqa: BLE001 - rephrase for clarity
+        raise RuntimeError(f"Unable to open PDF: {exc}") from exc
 
     try:
         if doc.needs_pass:
             if not password or not doc.authenticate(password):
-                raise PermissionError("此 PDF 有密碼保護，請提供正確密碼。")
+                raise PermissionError(
+                    "This PDF is password-protected. Please provide the correct password."
+                )
 
         page_count = doc.page_count
         if page_count == 0:
-            raise ValueError("這個 PDF 沒有頁面。")
+            raise ValueError("This PDF has no pages.")
 
         zoom = dpi / 72.0
         matrix = fitz.Matrix(zoom, zoom)
