@@ -6,6 +6,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from .convert import convert_pdf_to_png, default_output_dir
+from .resources import icon_path
 
 # Black-to-white only. No chromatic colors.
 COLORS = {
@@ -365,6 +366,26 @@ class PdfToPngApp(ttk.Frame):
         messagebox.showerror("Conversion failed", message)
 
 
+def _set_window_icon(root: tk.Tk) -> None:
+    png = icon_path("icon.png")
+    ico = icon_path("icon.ico")
+
+    if png:
+        try:
+            image = tk.PhotoImage(file=str(png))
+            root.iconphoto(True, image)
+            # Keep a reference so Tk does not garbage-collect the image.
+            root._app_icon_image = image  # type: ignore[attr-defined]
+        except tk.TclError:
+            pass
+
+    if ico:
+        try:
+            root.iconbitmap(default=str(ico))
+        except tk.TclError:
+            pass
+
+
 def launch_gui(
     initial_pdf: str | None = None,
     initial_output: str | None = None,
@@ -377,6 +398,7 @@ def launch_gui(
         pass
 
     apply_black_theme(root)
+    _set_window_icon(root)
     PdfToPngApp(
         root,
         initial_pdf=initial_pdf,

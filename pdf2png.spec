@@ -2,7 +2,7 @@
 
 from PyInstaller.utils.hooks import collect_all
 
-datas = []
+datas = [("assets/icon.png", "assets"), ("assets/icon.ico", "assets")]
 binaries = []
 hiddenimports = []
 
@@ -45,4 +45,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon="assets/icon.ico",
 )

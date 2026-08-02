@@ -104,12 +104,16 @@ pdf_to_png/
   convert.py            # Conversion logic
   cli.py                # Command-line interface
   gui.py                # Desktop UI (black / gray / white only)
+assets/
+  icon.png              # App / window icon
+  icon.ico              # Windows executable icon
 pdf2png.spec            # PyInstaller config
 build.bat               # Windows one-click build
 build.sh                # macOS / Linux build
 requirements.txt
 requirements-build.txt
 ```
+
 
 ## Notes
 
